@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>فاحص الحسابات | Instagram Checker</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>نظام تحليل الحسابات</h1>
+            <p>أداة برمجية للتحقق من نشاط الحسابات</p>
+        </div>
+
+        <div class="input-group">
+            <input type="text" id="targetUser" placeholder="أدخل يوزر الضحية/الهدف هنا...">
+            <button onclick="checkAccount()" id="btnCheck">بدء الفحص</button>
+        </div>
+
+        <div id="loading" class="hidden">جاري الاتصال بالخادم وتحليل البيانات...</div>
+
+        <div class="result-card hidden" id="resultCard">
+            <h3>نتائج التحليل:</h3>
+            <p><strong>اسم المستخدم:</strong> <span id="resUsername">-</span></p>
+            <p><strong>عدد المتابعين:</strong> <span id="resFollowers">-</span></p>
+            <p><strong>آخر تفاعل:</strong> <span id="resLastActive">-</span></p>
+            <p><strong>حالة الحساب:</strong> <span id="resStatus" class="badge">-</span></p>
+        </div>
+    </div>
+
+    <script>
+        async function checkAccount() {
+            const username = document.getElementById('targetUser').value;
+            const btn = document.getElementById('btnCheck');
+            const loader = document.getElementById('loading');
+            const resultCard = document.getElementById('resultCard');
+
+            if (!username) return alert("يرجى كتابة اسم مستخدم!");
+
+            // تفعيل وضع التحميل
+            btn.disabled = true;
+            loader.classList.remove('hidden');
+            resultCard.classList.add('hidden');
+
+            try {
+                // إرسال الطلب إلى سيرفر Node.js المحلي
+                const response = await fetch('http://localhost:3000/check-user', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ target: username })
+                });
+
+                const data = await response.json();
+
+                // عرض البيانات
+                document.getElementById('resUsername').innerText = data.username;
+                document.getElementById('resFollowers').innerText = data.followers;
+                document.getElementById('resLastActive').innerText = data.isPrivate ? "حساب خاص (مخفي)" : "متاح";
+                
+                const statusSpan = document.getElementById('resStatus');
+                statusSpan.innerText = data.status;
+                
+                // تلوين الحالة
+                if (data.status === "نشط") {
+                    statusSpan.className = "badge active";
+                } else {
+                    statusSpan.className = "badge inactive";
+                }
+
+                resultCard.classList.remove('hidden');
+
+            } catch (error) {
+                alert("حدث خطأ في الاتصال بالسيرفر! تأكد من تشغيل ملف Node.js");
+                console.error(error);
+            } finally {
+                btn.disabled = false;
+                loader.classList.add('hidden');
+            }
+        }
+    </script>
+</body>
+</html>
